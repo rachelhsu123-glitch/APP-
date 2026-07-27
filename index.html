@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>新聞截圖全圖片區域替換工具</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --panel-bg: #1e1e1e;
+      --primary-color: #0066cc;
+      --primary-hover: #0052a3;
+      --border-color: #333;
+      --text-color: #e0e0e0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* 控制面板 */
+    .control-panel {
+      width: 360px;
+      background-color: var(--panel-bg);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      height: fit-content;
+    }
+
+    .control-panel h2 {
+      margin-top: 0;
+      font-size: 18px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .form-section {
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+    }
+
+    .form-section h3 {
+      font-size: 15px;
+      margin-bottom: 10px;
+      color: #aaa;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .form-group input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #2a2a2a;
+      color: #fff;
+      box-sizing: border-box;
+    }
+
+    #exportBtn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+
+    #exportBtn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    /* 預覽區域 */
+    .preview-panel {
+      flex-grow: 1;
+      background-color: var(--panel-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 80vh;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 左側控制面板 -->
+    <div class="control-panel">
+      <h2>1. 上傳新聞截圖底圖</h2>
+      <div class="form-section">
+        <div class="form-group">
+          <label for="bgUpload">原始截圖 (底圖)：</label>
+          <input type="file" id="bgUpload" accept="image/*">
+        </div>
+      </div>
+
+      <h2>2. 替換區域 (圖片)</h2>
+
+      <!-- 區域 1: 頂部跑馬燈廣告/標題圖 -->
+      <div class="form-section">
+        <h3>區域 1 (頂部標題圖)</h3>
+        <div class="form-group">
+          <label for="topAdUpload">選擇新圖片：</label>
+          <input type="file" id="topAdUpload" accept="image/*">
+        </div>
+      </div>
+
+      <!-- 區域 2: 圓形頭像選單 -->
+      <div class="form-section">
+        <h3>區域 2 (圓形頭像)</h3>
+        <div class="form-group">
+          <label for="circleUpload">選擇新圖片 (自動遮罩為圓形)：</label>
+          <input type="file" id="circleUpload" accept="image/*">
+        </div>
+      </div>
+
+      <!-- 區域 3: 中央大圖廣告區塊 -->
+      <div class="form-section">
+        <h3>區域 3 (中央大廣告 - 精準微圓角)</h3>
+        <div class="form-group">
+          <label for="mainAdUpload">選擇新圖片：</label>
+          <input type="file" id="mainAdUpload" accept="image/*">
+        </div>
+      </div>
+
+      <!-- 區域 4: 底部新聞/廣告欄位 -->
+      <div class="form-section">
+        <h3>區域 4 (底部圖文區)</h3>
+        <div class="form-group">
+          <label for="footerAdUpload">選擇新圖片：</label>
+          <input type="file" id="footerAdUpload" accept="image/*">
+        </div>
+      </div>
+
+      <button id="exportBtn">下載合成圖片</button>
+    </div>
+
+    <!-- 右側畫布預覽區域 -->
+    <div class="preview-panel">
+      <canvas id="finalCanvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('finalCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let bgImage = null;
+    let topAdImage = null;
+    let circleImage = null;
+    let mainAdImage = null;
+    let footerAdImage = null;
+
+    // 定義區塊位置（依據圖片對齊下方新聞列表）
+    const BOX_CONFIG = {
+      // 區域 1: 頂部標題廣告圖
+      topAd: { x: 0.012, y: 0.116, w: 0.976, h: 0.038 },
+      // 區域 2: 圓形頭像
+      circle: { x: 0.035, y: 0.268, w: 0.160, h: 0.088 },
+      // 區域 3: 中央大廣告 (調整圓角半徑為 6px，精準對齊範例紅框)
+      mainAd: { 
+        x: 0.015, 
+        y: 0.364, 
+        w: 0.970, 
+        h: 0.384, 
+        borderRadius: 6 
+      },
+      // 區域 4: 底部新聞欄位
+      footerAd: { x: 0.015, y: 0.770, w: 0.970, h: 0.128 }
+    };
+
+    // 輔助函式：繪製圓角矩形路徑
+    function drawRoundRectPath(context, x, y, w, h, radius) {
+      context.beginPath();
+      if (typeof context.roundRect === 'function') {
+        context.roundRect(x, y, w, h, radius);
+      } else {
+        context.moveTo(x + radius, y);
+        context.arcTo(x + w, y, x + w, y + h, radius);
+        context.arcTo(x + w, y + h, x, y + h, radius);
+        context.arcTo(x, y + h, x, y, radius);
+        context.arcTo(x, y, x + w, y, radius);
+        context.closePath();
+      }
+    }
+
+    // 繪製畫布的主函數
+    function renderCanvas() {
+      if (!bgImage) return;
+
+      // 1. 設定 Canvas 尺寸與原始圖片相同
+      canvas.width = bgImage.naturalWidth;
+      canvas.height = bgImage.naturalHeight;
+      ctx.drawImage(bgImage, 0, 0);
+
+      // 2. 繪製區域 1: 頂部廣告圖
+      if (topAdImage) {
+        const x = canvas.width * BOX_CONFIG.topAd.x;
+        const y = canvas.height * BOX_CONFIG.topAd.y;
+        const w = canvas.width * BOX_CONFIG.topAd.w;
+        const h = canvas.height * BOX_CONFIG.topAd.h;
+        ctx.drawImage(topAdImage, x, y, w, h);
+      }
+
+      // 3. 繪製區域 2: 圓形頭像
+      if (circleImage) {
+        const x = canvas.width * BOX_CONFIG.circle.x;
+        const y = canvas.height * BOX_CONFIG.circle.y;
+        const size = canvas.width * BOX_CONFIG.circle.w;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(circleImage, x, y, size, size);
+        ctx.restore();
+      }
+
+      // 4. 繪製區域 4: 底部新聞/廣告
+      if (footerAdImage) {
+        const x = canvas.width * BOX_CONFIG.footerAd.x;
+        const y = canvas.height * BOX_CONFIG.footerAd.y;
+        const w = canvas.width * BOX_CONFIG.footerAd.w;
+        const h = canvas.height * BOX_CONFIG.footerAd.h;
+        ctx.drawImage(footerAdImage, x, y, w, h);
+      }
+
+      // 5. 繪製區域 3: 中央大廣告 (精準 6px 微圓角圖片裁切 + 黑底補色)
+      if (mainAdImage) {
+        const cfg = BOX_CONFIG.mainAd;
+        const boxX = canvas.width * cfg.x;
+        const boxY = canvas.height * cfg.y;
+        const boxW = canvas.width * cfg.w;
+        const boxH = canvas.height * cfg.h;
+        const radius = cfg.borderRadius;
+
+        // 計算圖片等比例縮放尺寸與置中座標
+        const imgRatio = mainAdImage.naturalWidth / mainAdImage.naturalHeight;
+        const boxRatio = boxW / boxH;
+
+        let drawW, drawH, drawX, drawY;
+
+        if (imgRatio > boxRatio) {
+          drawW = boxW;
+          drawH = boxW / imgRatio;
+          drawX = boxX;
+          drawY = boxY + (boxH - drawH) / 2;
+        } else {
+          drawH = boxH;
+          drawW = boxH * imgRatio;
+          drawX = boxX + (boxW - drawW) / 2;
+          drawY = boxY;
+        }
+
+        // 步驟 1：先塗黑整體背景區域 (為等比例縮放留黑或微圓角邊緣補色)
+        ctx.save();
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+        ctx.restore();
+
+        // 步驟 2：對圖片區域套用精準的 6px 微圓角遮罩
+        ctx.save();
+        drawRoundRectPath(ctx, drawX, drawY, drawW, drawH, radius);
+        ctx.clip();
+
+        // 步驟 3：繪製縮放後的微圓角圖片
+        ctx.drawImage(mainAdImage, drawX, drawY, drawW, drawH);
+        ctx.restore();
+      }
+    }
+
+    // 通用圖片載入器
+    function setupImageUpload(inputId, callback) {
+      document.getElementById(inputId).addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            const img = new Image();
+            img.onload = () => callback(img);
+            img.src = evt.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    // 綁定各個圖片上傳事件
+    setupImageUpload('bgUpload', (img) => { bgImage = img; renderCanvas(); });
+    setupImageUpload('topAdUpload', (img) => { topAdImage = img; renderCanvas(); });
+    setupImageUpload('circleUpload', (img) => { circleImage = img; renderCanvas(); });
+    setupImageUpload('mainAdUpload', (img) => { mainAdImage = img; renderCanvas(); });
+    setupImageUpload('footerAdUpload', (img) => { footerAdImage = img; renderCanvas(); });
+
+    // 下載合成圖片
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      if (!bgImage) {
+        alert('請先上傳原始新聞截圖底圖！');
+        return;
+      }
+      const link = document.createElement('a');
+      link.download = 'news_mockup.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+    });
+  </script>
+</body>
+</html>
