@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新聞截圖多功能廣告替換工具</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --panel-bg: #1e1e1e;
+      --primary-color: #0066cc;
+      --primary-hover: #0052a3;
+      --border-color: #333;
+      --text-color: #e0e0e0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* 控制面板 */
+    .control-panel {
+      width: 360px;
+      background-color: var(--panel-bg);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      height: fit-content;
+      flex-shrink: 0;
+    }
+
+    .control-panel h2 {
+      margin-top: 0;
+      font-size: 18px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .mode-select-group {
+      margin-bottom: 20px;
+      background: #2a2a2a;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    .mode-select-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #64b5f6;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      background-color: #1e1e1e;
+      color: #fff;
+      border: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    .form-section {
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+    }
+
+    .form-section h3 {
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #aaa;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .form-group input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #2a2a2a;
+      color: #fff;
+      box-sizing: border-box;
+      cursor: pointer;
+    }
+
+    .form-group input[type="file"]::-webkit-file-upload-button {
+      background: #444;
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #exportBtn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+
+    #exportBtn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    /* 右側畫布預覽區域 */
+    .preview-panel {
+      flex-grow: 1;
+      background-color: var(--panel-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 80vh;
+      overflow: auto;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 左側控制面板 -->
+    <div class="control-panel">
+      <h2>新聞截圖綜合替換工具</h2>
+
+      <!-- 版型選擇器 -->
+      <div class="mode-select-group">
+        <label for="templateSelect">選擇版型模式：</label>
+        <select id="templateSelect">
+          <option value="modeA">APP列表廣告</option>
+          <option value="modeB">APP新聞頁橫幅上</option>
+        </select>
+      </div>
+
+      <!-- 1. 底圖上傳 -->
+      <h2>1. 上傳新聞截圖底圖</h2>
+      <div class="form-section">
+        <div class="form-group">
+          <label for="bgUpload">原始截圖 (底圖)：</label>
+          <input type="file" id="bgUpload" accept="image/*">
+        </div>
+      </div>
+
+      <!-- 2. 替換區域（根據版型動態顯示） -->
+      <h2>2. 替換區域</h2>
+
+      <!-- APP列表廣告 專屬欄位 -->
+      <div id="controlsModeA">
+        <div class="form-section">
+          <h3>區域 1 (頂部標題圖)</h3>
+          <div class="form-group">
+            <input type="file" id="topAdUpload" accept="image/*">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>區域 2 (圓形頭像)</h3>
+          <div class="form-group">
+            <input type="file" id="circleUpload" accept="image/*">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>區域 3 (中央大廣告 - 微圓角)</h3>
+          <div class="form-group">
+            <input type="file" id="mainAdUpload" accept="image/*">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>區域 4 (底部圖文區)</h3>
+          <div class="form-group">
+            <input type="file" id="footerAdUpload" accept="image/*">
+          </div>
+        </div>
+      </div>
+
+      <!-- APP新聞頁橫幅上 專屬欄位 -->
+      <div id="controlsModeB" style="display: none;">
+        <div class="form-section">
+          <h3>上方廣告區塊 (直角無縫覆蓋)</h3>
+          <div class="form-group">
+            <input type="file" id="fullAdUpload" accept="image/*">
+          </div>
+        </div>
+      </div>
+
+      <button id="exportBtn">下載合成圖片</button>
+    </div>
+
+    <!-- 右側畫布預覽區域 -->
+    <div class="preview-panel">
+      <canvas id="finalCanvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('finalCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 版型模式 (modeA / modeB)
+    let currentMode = 'modeA';
+
+    // 圖片物件儲存
+    let bgImage = null;
+    let topAdImage = null;
+    let circleImage = null;
+    let mainAdImage = null;
+    let footerAdImage = null;
+    let fullAdImage = null;
+
+    // APP列表廣告 設定
+    const CONFIG_A = {
+      topAd: { x: 0.012, y: 0.116, w: 0.976, h: 0.038 },
+      circle: { x: 0.035, y: 0.268, w: 0.160, h: 0.088 },
+      mainAd: { x: 0.015, y: 0.364, w: 0.970, h: 0.384, borderRadius: 6 },
+      footerAd: { x: 0.015, y: 0.770, w: 0.970, h: 0.128 }
+    };
+
+    // APP新聞頁橫幅上 設定
+    const CONFIG_B = {
+      x: 0.028,
+      y: 0.108,
+      w: 0.944,
+      h: 0.372
+    };
+
+    // 圓角矩形輔助函式
+    function drawRoundRectPath(context, x, y, w, h, radius) {
+      context.beginPath();
+      if (typeof context.roundRect === 'function') {
+        context.roundRect(x, y, w, h, radius);
+      } else {
+        context.moveTo(x + radius, y);
+        context.arcTo(x + w, y, x + w, y + h, radius);
+        context.arcTo(x + w, y + h, x, y + h, radius);
+        context.arcTo(x, y + h, x, y, radius);
+        context.arcTo(x, y, x + w, y, radius);
+        context.closePath();
+      }
+    }
+
+    // 主渲染邏輯
+    function renderCanvas() {
+      if (!bgImage) return;
+
+      canvas.width = bgImage.naturalWidth;
+      canvas.height = bgImage.naturalHeight;
+      ctx.drawImage(bgImage, 0, 0);
+
+      if (currentMode === 'modeA') {
+        // --- 繪製 APP列表廣告 ---
+        if (topAdImage) {
+          const cfg = CONFIG_A.topAd;
+          ctx.drawImage(topAdImage, canvas.width * cfg.x, canvas.height * cfg.y, canvas.width * cfg.w, canvas.height * cfg.h);
+        }
+
+        if (circleImage) {
+          const cfg = CONFIG_A.circle;
+          const x = canvas.width * cfg.x;
+          const y = canvas.height * cfg.y;
+          const size = canvas.width * cfg.w;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.drawImage(circleImage, x, y, size, size);
+          ctx.restore();
+        }
+
+        if (footerAdImage) {
+          const cfg = CONFIG_A.footerAd;
+          ctx.drawImage(footerAdImage, canvas.width * cfg.x, canvas.height * cfg.y, canvas.width * cfg.w, canvas.height * cfg.h);
+        }
+
+        if (mainAdImage) {
+          const cfg = CONFIG_A.mainAd;
+          const boxX = canvas.width * cfg.x;
+          const boxY = canvas.height * cfg.y;
+          const boxW = canvas.width * cfg.w;
+          const boxH = canvas.height * cfg.h;
+
+          const imgRatio = mainAdImage.naturalWidth / mainAdImage.naturalHeight;
+          const boxRatio = boxW / boxH;
+
+          let drawW = boxW, drawH = boxH, drawX = boxX, drawY = boxY;
+          if (imgRatio > boxRatio) {
+            drawH = boxW / imgRatio;
+            drawY = boxY + (boxH - drawH) / 2;
+          } else {
+            drawW = boxH * imgRatio;
+            drawX = boxX + (boxW - drawW) / 2;
+          }
+
+          ctx.save();
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(boxX, boxY, boxW, boxH);
+          ctx.restore();
+
+          ctx.save();
+          drawRoundRectPath(ctx, drawX, drawY, drawW, drawH, cfg.borderRadius);
+          ctx.clip();
+          ctx.drawImage(mainAdImage, drawX, drawY, drawW, drawH);
+          ctx.restore();
+        }
+
+      } else if (currentMode === 'modeB') {
+        // --- 繪製 APP新聞頁橫幅上 ---
+        if (fullAdImage) {
+          const boxX = canvas.width * CONFIG_B.x;
+          const boxY = canvas.height * CONFIG_B.y;
+          const boxW = canvas.width * CONFIG_B.w;
+          const boxH = canvas.height * CONFIG_B.h;
+
+          const imgRatio = fullAdImage.naturalWidth / fullAdImage.naturalHeight;
+          const boxRatio = boxW / boxH;
+
+          let drawW = boxW, drawH = boxH, drawX = boxX, drawY = boxY;
+          if (imgRatio > boxRatio) {
+            drawH = boxW / imgRatio;
+            drawY = boxY + (boxH - drawH) / 2;
+          } else {
+            drawW = boxH * imgRatio;
+            drawX = boxX + (boxW - drawW) / 2;
+          }
+
+          ctx.save();
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(boxX, boxY, boxW, boxH);
+          ctx.restore();
+
+          ctx.drawImage(fullAdImage, drawX, drawY, drawW, drawH);
+        }
+      }
+    }
+
+    // 切換模式選單
+    document.getElementById('templateSelect').addEventListener('change', (e) => {
+      currentMode = e.target.value;
+      if (currentMode === 'modeA') {
+        document.getElementById('controlsModeA').style.display = 'block';
+        document.getElementById('controlsModeB').style.display = 'none';
+      } else {
+        document.getElementById('controlsModeA').style.display = 'none';
+        document.getElementById('controlsModeB').style.display = 'block';
+      }
+      renderCanvas();
+    });
+
+    // 檔案上傳綁定 helper
+    function setupImageUpload(inputId, callback) {
+      document.getElementById(inputId).addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            const img = new Image();
+            img.onload = () => callback(img);
+            img.src = evt.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    setupImageUpload('bgUpload', (img) => { bgImage = img; renderCanvas(); });
+    setupImageUpload('topAdUpload', (img) => { topAdImage = img; renderCanvas(); });
+    setupImageUpload('circleUpload', (img) => { circleImage = img; renderCanvas(); });
+    setupImageUpload('mainAdUpload', (img) => { mainAdImage = img; renderCanvas(); });
+    setupImageUpload('footerAdUpload', (img) => { footerAdImage = img; renderCanvas(); });
+    setupImageUpload('fullAdUpload', (img) => { fullAdImage = img; renderCanvas(); });
+
+    // 下載圖片
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      if (!bgImage) {
+        alert('請先上傳原始新聞截圖底圖！');
+        return;
+      }
+      const link = document.createElement('a');
+      link.download = 'modified_news_screenshot.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+    });
+  </script>
+</body>
+</html>
