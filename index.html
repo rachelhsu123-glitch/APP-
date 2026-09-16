@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>新聞截圖多功能廣告替換工具</title>
+  <title>新聞截圖多功能廣告替換工具 (手動位置微調版)</title>
 
-  <!-- 加入網頁小圖示 (Favicon) 設定 -->
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="favicon.png">
 
@@ -30,19 +29,20 @@
     .container {
       display: flex;
       gap: 20px;
-      max-width: 1400px;
+      max-width: 1500px;
       margin: 0 auto;
     }
 
-    /* 控制面板 */
     .control-panel {
-      width: 360px;
+      width: 400px;
       background-color: var(--panel-bg);
       padding: 25px;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
       height: fit-content;
       flex-shrink: 0;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .control-panel h2 {
@@ -86,8 +86,15 @@
 
     .form-section h3 {
       font-size: 14px;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
       color: #aaa;
+    }
+
+    .info-badge {
+      font-size: 11px;
+      color: #00e676;
+      margin-bottom: 8px;
+      display: block;
     }
 
     .form-group {
@@ -112,13 +119,39 @@
       cursor: pointer;
     }
 
-    .form-group input[type="file"]::-webkit-file-upload-button {
-      background: #444;
-      color: #fff;
-      border: none;
-      padding: 4px 8px;
+    /* 手動微調控制群組 */
+    .offset-controls {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+      background: #181818;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    .offset-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .offset-item label {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 2px;
+    }
+
+    .offset-item input[type="number"] {
+      width: 100%;
+      padding: 4px;
+      border: 1px solid #444;
       border-radius: 4px;
-      cursor: pointer;
+      background: #262626;
+      color: #fff;
+      text-align: center;
+      font-size: 12px;
+      box-sizing: border-box;
     }
 
     #exportBtn {
@@ -139,7 +172,6 @@
       background-color: var(--primary-hover);
     }
 
-    /* 右側畫布預覽區域 */
     .preview-panel {
       flex-grow: 1;
       background-color: var(--panel-bg);
@@ -164,11 +196,9 @@
 <body>
 
   <div class="container">
-    <!-- 左側控制面板 -->
     <div class="control-panel">
       <h2>新聞截圖綜合替換工具</h2>
 
-      <!-- 版型選擇器 -->
       <div class="mode-select-group">
         <label for="templateSelect">選擇版型模式：</label>
         <select id="templateSelect">
@@ -177,7 +207,14 @@
         </select>
       </div>
 
-      <!-- 1. 底圖上傳 -->
+      <div class="mode-select-group">
+        <label for="fitStrategy">素材自動縮放模式：</label>
+        <select id="fitStrategy">
+          <option value="cover">自動無縫裁切填滿 (Cover)</option>
+          <option value="contain">完整呈現 (Contain)</option>
+        </select>
+      </div>
+
       <h2>1. 上傳新聞截圖底圖</h2>
       <div class="form-section">
         <div class="form-group">
@@ -186,36 +223,63 @@
         </div>
       </div>
 
-      <!-- 2. 替換區域（根據版型動態顯示） -->
-      <h2>2. 替換區域</h2>
+      <h2>2. 替換與位置微調</h2>
 
       <!-- APP列表廣告 專屬欄位 -->
       <div id="controlsModeA">
         <div class="form-section">
           <h3>區域 1 (頂部標題圖)</h3>
+          <span class="info-badge" id="infoTopAd">偵測尺寸：--</span>
           <div class="form-group">
             <input type="file" id="topAdUpload" accept="image/*">
+          </div>
+          <div class="offset-controls">
+            <div class="offset-item"><label>X 偏移</label><input type="number" id="off_topAd_x" value="0"></div>
+            <div class="offset-item"><label>Y 偏移</label><input type="number" id="off_topAd_y" value="0"></div>
+            <div class="offset-item"><label>寬 增減</label><input type="number" id="off_topAd_w" value="0"></div>
+            <div class="offset-item"><label>高 增減</label><input type="number" id="off_topAd_h" value="0"></div>
           </div>
         </div>
 
         <div class="form-section">
           <h3>區域 2 (圓形頭像)</h3>
+          <span class="info-badge" id="infoCircle">偵測尺寸：--</span>
           <div class="form-group">
             <input type="file" id="circleUpload" accept="image/*">
+          </div>
+          <div class="offset-controls">
+            <div class="offset-item"><label>X 偏移</label><input type="number" id="off_circle_x" value="0"></div>
+            <div class="offset-item"><label>Y 偏移</label><input type="number" id="off_circle_y" value="0"></div>
+            <div class="offset-item"><label>寬 增減</label><input type="number" id="off_circle_w" value="0"></div>
+            <div class="offset-item"><label>高 增減</label><input type="number" id="off_circle_h" value="0"></div>
           </div>
         </div>
 
         <div class="form-section">
           <h3>區域 3 (中央大廣告 - 微圓角)</h3>
+          <span class="info-badge" id="infoMainAd">偵測尺寸：--</span>
           <div class="form-group">
             <input type="file" id="mainAdUpload" accept="image/*">
+          </div>
+          <div class="offset-controls">
+            <div class="offset-item"><label>X 偏移</label><input type="number" id="off_mainAd_x" value="0"></div>
+            <div class="offset-item"><label>Y 偏移</label><input type="number" id="off_mainAd_y" value="0"></div>
+            <div class="offset-item"><label>寬 增減</label><input type="number" id="off_mainAd_w" value="0"></div>
+            <div class="offset-item"><label>高 增減</label><input type="number" id="off_mainAd_h" value="0"></div>
           </div>
         </div>
 
         <div class="form-section">
           <h3>區域 4 (底部圖文區)</h3>
+          <span class="info-badge" id="infoFooterAd">偵測尺寸：--</span>
           <div class="form-group">
             <input type="file" id="footerAdUpload" accept="image/*">
+          </div>
+          <div class="offset-controls">
+            <div class="offset-item"><label>X 偏移</label><input type="number" id="off_footerAd_x" value="0"></div>
+            <div class="offset-item"><label>Y 偏移</label><input type="number" id="off_footerAd_y" value="0"></div>
+            <div class="offset-item"><label>寬 增減</label><input type="number" id="off_footerAd_w" value="0"></div>
+            <div class="offset-item"><label>高 增減</label><input type="number" id="off_footerAd_h" value="0"></div>
           </div>
         </div>
       </div>
@@ -224,8 +288,15 @@
       <div id="controlsModeB" style="display: none;">
         <div class="form-section">
           <h3>上方廣告區塊 (直角無縫覆蓋)</h3>
+          <span class="info-badge" id="infoFullAd">偵測尺寸：--</span>
           <div class="form-group">
             <input type="file" id="fullAdUpload" accept="image/*">
+          </div>
+          <div class="offset-controls">
+            <div class="offset-item"><label>X 偏移</label><input type="number" id="off_fullAd_x" value="0"></div>
+            <div class="offset-item"><label>Y 偏移</label><input type="number" id="off_fullAd_y" value="0"></div>
+            <div class="offset-item"><label>寬 增減</label><input type="number" id="off_fullAd_w" value="0"></div>
+            <div class="offset-item"><label>高 增減</label><input type="number" id="off_fullAd_h" value="0"></div>
           </div>
         </div>
       </div>
@@ -233,7 +304,6 @@
       <button id="exportBtn">下載合成圖片</button>
     </div>
 
-    <!-- 右側畫布預覽區域 -->
     <div class="preview-panel">
       <canvas id="finalCanvas"></canvas>
     </div>
@@ -243,10 +313,9 @@
     const canvas = document.getElementById('finalCanvas');
     const ctx = canvas.getContext('2d');
 
-    // 版型模式 (modeA / modeB)
     let currentMode = 'modeA';
+    let fitMode = 'cover';
 
-    // 圖片物件儲存
     let bgImage = null;
     let topAdImage = null;
     let circleImage = null;
@@ -254,23 +323,59 @@
     let footerAdImage = null;
     let fullAdImage = null;
 
-    // APP列表廣告 設定
     const CONFIG_A = {
-      topAd: { x: 0.012, y: 0.116, w: 0.976, h: 0.038 },
-      circle: { x: 0.035, y: 0.268, w: 0.160, h: 0.088 },
-      mainAd: { x: 0.015, y: 0.364, w: 0.970, h: 0.384, borderRadius: 6 },
-      footerAd: { x: 0.015, y: 0.770, w: 0.970, h: 0.128 }
+      topAd: { key: 'topAd', x: 0.012, y: 0.116, w: 0.976, h: 0.038, title: "頂部標題" },
+      circle: { key: 'circle', x: 0.035, y: 0.268, w: 0.160, h: 0.088, title: "圓形頭像" },
+      mainAd: { key: 'mainAd', x: 0.015, y: 0.364, w: 0.970, h: 0.384, borderRadius: 6, title: "中央大廣告" },
+      footerAd: { key: 'footerAd', x: 0.015, y: 0.770, w: 0.970, h: 0.128, title: "底部圖文" }
     };
 
-    // APP新聞頁橫幅上 設定
     const CONFIG_B = {
-      x: 0.028,
-      y: 0.108,
-      w: 0.944,
-      h: 0.372
+      fullAd: { key: 'fullAd', x: 0.028, y: 0.108, w: 0.944, h: 0.372, title: "上方廣告區" }
     };
 
-    // 圓角矩形輔助函式
+    function getOffset(key) {
+      const x = parseFloat(document.getElementById(`off_${key}_x`)?.value || 0);
+      const y = parseFloat(document.getElementById(`off_${key}_y`)?.value || 0);
+      const w = parseFloat(document.getElementById(`off_${key}_w`)?.value || 0);
+      const h = parseFloat(document.getElementById(`off_${key}_h`)?.value || 0);
+      return { x, y, w, h };
+    }
+
+    function updateDetectedDimensions() {
+      if (!bgImage) return;
+      const bw = bgImage.naturalWidth;
+      const bh = bgImage.naturalHeight;
+
+      if (currentMode === 'modeA') {
+        const t = getFinalBox(CONFIG_A.topAd, bw, bh);
+        document.getElementById('infoTopAd').innerText = `目前位置：${Math.round(t.w)} × ${Math.round(t.h)} px (X:${Math.round(t.x)}, Y:${Math.round(t.y)})`;
+
+        const c = getFinalBox(CONFIG_A.circle, bw, bh);
+        document.getElementById('infoCircle').innerText = `目前位置：${Math.round(c.w)} × ${Math.round(c.h)} px (X:${Math.round(c.x)}, Y:${Math.round(c.y)})`;
+
+        const m = getFinalBox(CONFIG_A.mainAd, bw, bh);
+        document.getElementById('infoMainAd').innerText = `目前位置：${Math.round(m.w)} × ${Math.round(m.h)} px (X:${Math.round(m.x)}, Y:${Math.round(m.y)})`;
+
+        const f = getFinalBox(CONFIG_A.footerAd, bw, bh);
+        document.getElementById('infoFooterAd').innerText = `目前位置：${Math.round(f.w)} × ${Math.round(f.h)} px (X:${Math.round(f.x)}, Y:${Math.round(f.y)})`;
+      } else {
+        const b = getFinalBox(CONFIG_B.fullAd, bw, bh);
+        document.getElementById('infoFullAd').innerText = `目前位置：${Math.round(b.w)} × ${Math.round(b.h)} px (X:${Math.round(b.x)}, Y:${Math.round(b.y)})`;
+      }
+    }
+
+    function getFinalBox(cfg, bw, bh) {
+      const off = getOffset(cfg.key);
+      const baseW = cfg.w ? bw * cfg.w : bw * cfg.h;
+      return {
+        x: bw * cfg.x + off.x,
+        y: bh * cfg.y + off.y,
+        w: baseW + off.w,
+        h: bh * cfg.h + off.h
+      };
+    }
+
     function drawRoundRectPath(context, x, y, w, h, radius) {
       context.beginPath();
       if (typeof context.roundRect === 'function') {
@@ -285,7 +390,74 @@
       }
     }
 
-    // 主渲染邏輯
+    function drawSmartImage(img, boxX, boxY, boxW, boxH, mode = 'cover', clipFn = null) {
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      const boxRatio = boxW / boxH;
+
+      let drawW, drawH, drawX, drawY;
+
+      if (mode === 'cover') {
+        if (imgRatio > boxRatio) {
+          drawH = boxH;
+          drawW = boxH * imgRatio;
+          drawX = boxX - (drawW - boxW) / 2;
+          drawY = boxY;
+        } else {
+          drawW = boxW;
+          drawH = boxW / imgRatio;
+          drawX = boxX;
+          drawY = boxY - (drawH - boxH) / 2;
+        }
+      } else {
+        if (imgRatio > boxRatio) {
+          drawW = boxW;
+          drawH = boxW / imgRatio;
+          drawX = boxX;
+          drawY = boxY + (boxH - drawH) / 2;
+        } else {
+          drawH = boxH;
+          drawW = boxH * imgRatio;
+          drawX = boxX + (boxW - drawW) / 2;
+          drawY = boxY;
+        }
+      }
+
+      ctx.save();
+      if (mode === 'contain') {
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+      }
+
+      if (clipFn) {
+        clipFn();
+      } else {
+        ctx.beginPath();
+        ctx.rect(boxX, boxY, boxW, boxH);
+        ctx.clip();
+      }
+
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      ctx.restore();
+    }
+
+    function drawPlaceholderGuide(boxX, boxY, boxW, boxH, labelText) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(0, 150, 255, 0.7)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+      ctx.fillStyle = "rgba(0, 102, 204, 0.2)";
+      ctx.fillRect(boxX, boxY, boxW, boxH);
+
+      ctx.fillStyle = "#00e676";
+      ctx.font = `bold ${Math.max(12, boxH * 0.2)}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`待替換區：${labelText}`, boxX + boxW / 2, boxY + boxH / 2);
+      ctx.restore();
+    }
+
     function renderCanvas() {
       if (!bgImage) return;
 
@@ -293,94 +465,66 @@
       canvas.height = bgImage.naturalHeight;
       ctx.drawImage(bgImage, 0, 0);
 
+      const bw = canvas.width;
+      const bh = canvas.height;
+
+      updateDetectedDimensions();
+
       if (currentMode === 'modeA') {
-        // --- 繪製 APP列表廣告 ---
+        // 1. 頂部
+        const boxTop = getFinalBox(CONFIG_A.topAd, bw, bh);
         if (topAdImage) {
-          const cfg = CONFIG_A.topAd;
-          ctx.drawImage(topAdImage, canvas.width * cfg.x, canvas.height * cfg.y, canvas.width * cfg.w, canvas.height * cfg.h);
+          drawSmartImage(topAdImage, boxTop.x, boxTop.y, boxTop.w, boxTop.h, fitMode);
+        } else {
+          drawPlaceholderGuide(boxTop.x, boxTop.y, boxTop.w, boxTop.h, CONFIG_A.topAd.title);
         }
 
+        // 2. 圓形頭像
+        const boxCircle = getFinalBox(CONFIG_A.circle, bw, bh);
         if (circleImage) {
-          const cfg = CONFIG_A.circle;
-          const x = canvas.width * cfg.x;
-          const y = canvas.height * cfg.y;
-          const size = canvas.width * cfg.w;
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-          ctx.clip();
-          ctx.drawImage(circleImage, x, y, size, size);
-          ctx.restore();
+          drawSmartImage(circleImage, boxCircle.x, boxCircle.y, boxCircle.w, boxCircle.h, fitMode, () => {
+            ctx.beginPath();
+            ctx.arc(boxCircle.x + boxCircle.w / 2, boxCircle.y + boxCircle.h / 2, Math.min(boxCircle.w, boxCircle.h) / 2, 0, Math.PI * 2);
+            ctx.clip();
+          });
+        } else {
+          drawPlaceholderGuide(boxCircle.x, boxCircle.y, boxCircle.w, boxCircle.h, CONFIG_A.circle.title);
         }
 
+        // 3. 底部圖文
+        const boxFooter = getFinalBox(CONFIG_A.footerAd, bw, bh);
         if (footerAdImage) {
-          const cfg = CONFIG_A.footerAd;
-          ctx.drawImage(footerAdImage, canvas.width * cfg.x, canvas.height * cfg.y, canvas.width * cfg.w, canvas.height * cfg.h);
+          drawSmartImage(footerAdImage, boxFooter.x, boxFooter.y, boxFooter.w, boxFooter.h, fitMode);
+        } else {
+          drawPlaceholderGuide(boxFooter.x, boxFooter.y, boxFooter.w, boxFooter.h, CONFIG_A.footerAd.title);
         }
 
+        // 4. 中央大廣告
+        const boxMain = getFinalBox(CONFIG_A.mainAd, bw, bh);
         if (mainAdImage) {
-          const cfg = CONFIG_A.mainAd;
-          const boxX = canvas.width * cfg.x;
-          const boxY = canvas.height * cfg.y;
-          const boxW = canvas.width * cfg.w;
-          const boxH = canvas.height * cfg.h;
-
-          const imgRatio = mainAdImage.naturalWidth / mainAdImage.naturalHeight;
-          const boxRatio = boxW / boxH;
-
-          let drawW = boxW, drawH = boxH, drawX = boxX, drawY = boxY;
-          if (imgRatio > boxRatio) {
-            drawH = boxW / imgRatio;
-            drawY = boxY + (boxH - drawH) / 2;
-          } else {
-            drawW = boxH * imgRatio;
-            drawX = boxX + (boxW - drawW) / 2;
-          }
-
-          ctx.save();
-          ctx.fillStyle = "#000000";
-          ctx.fillRect(boxX, boxY, boxW, boxH);
-          ctx.restore();
-
-          ctx.save();
-          drawRoundRectPath(ctx, drawX, drawY, drawW, drawH, cfg.borderRadius);
-          ctx.clip();
-          ctx.drawImage(mainAdImage, drawX, drawY, drawW, drawH);
-          ctx.restore();
+          drawSmartImage(mainAdImage, boxMain.x, boxMain.y, boxMain.w, boxMain.h, fitMode, () => {
+            drawRoundRectPath(ctx, boxMain.x, boxMain.y, boxMain.w, boxMain.h, CONFIG_A.mainAd.borderRadius);
+            ctx.clip();
+          });
+        } else {
+          drawPlaceholderGuide(boxMain.x, boxMain.y, boxMain.w, boxMain.h, CONFIG_A.mainAd.title);
         }
 
       } else if (currentMode === 'modeB') {
-        // --- 繪製 APP新聞頁橫幅上 ---
+        const boxFull = getFinalBox(CONFIG_B.fullAd, bw, bh);
         if (fullAdImage) {
-          const boxX = canvas.width * CONFIG_B.x;
-          const boxY = canvas.height * CONFIG_B.y;
-          const boxW = canvas.width * CONFIG_B.w;
-          const boxH = canvas.height * CONFIG_B.h;
-
-          const imgRatio = fullAdImage.naturalWidth / fullAdImage.naturalHeight;
-          const boxRatio = boxW / boxH;
-
-          let drawW = boxW, drawH = boxH, drawX = boxX, drawY = boxY;
-          if (imgRatio > boxRatio) {
-            drawH = boxW / imgRatio;
-            drawY = boxY + (boxH - drawH) / 2;
-          } else {
-            drawW = boxH * imgRatio;
-            drawX = boxX + (boxW - drawW) / 2;
-          }
-
-          ctx.save();
-          ctx.fillStyle = "#000000";
-          ctx.fillRect(boxX, boxY, boxW, boxH);
-          ctx.restore();
-
-          ctx.drawImage(fullAdImage, drawX, drawY, drawW, drawH);
+          drawSmartImage(fullAdImage, boxFull.x, boxFull.y, boxFull.w, boxFull.h, fitMode);
+        } else {
+          drawPlaceholderGuide(boxFull.x, boxFull.y, boxFull.w, boxFull.h, CONFIG_B.fullAd.title);
         }
       }
     }
 
-    // 切換模式選單
+    // 微調數值即時更新監聽
+    document.querySelectorAll('.offset-controls input').forEach(input => {
+      input.addEventListener('input', renderCanvas);
+    });
+
     document.getElementById('templateSelect').addEventListener('change', (e) => {
       currentMode = e.target.value;
       if (currentMode === 'modeA') {
@@ -393,7 +537,11 @@
       renderCanvas();
     });
 
-    // 檔案上傳綁定 helper
+    document.getElementById('fitStrategy').addEventListener('change', (e) => {
+      fitMode = e.target.value;
+      renderCanvas();
+    });
+
     function setupImageUpload(inputId, callback) {
       document.getElementById(inputId).addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -416,7 +564,6 @@
     setupImageUpload('footerAdUpload', (img) => { footerAdImage = img; renderCanvas(); });
     setupImageUpload('fullAdUpload', (img) => { fullAdImage = img; renderCanvas(); });
 
-    // 下載圖片
     document.getElementById('exportBtn').addEventListener('click', () => {
       if (!bgImage) {
         alert('請先上傳原始新聞截圖底圖！');
