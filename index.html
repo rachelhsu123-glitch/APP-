@@ -458,7 +458,7 @@
       ctx.restore();
     }
 
-    function renderCanvas() {
+    function renderCanvas(isExporting = false) {
       if (!bgImage) return;
 
       canvas.width = bgImage.naturalWidth;
@@ -475,7 +475,7 @@
         const boxTop = getFinalBox(CONFIG_A.topAd, bw, bh);
         if (topAdImage) {
           drawSmartImage(topAdImage, boxTop.x, boxTop.y, boxTop.w, boxTop.h, fitMode);
-        } else {
+        } else if (!isExporting) {
           drawPlaceholderGuide(boxTop.x, boxTop.y, boxTop.w, boxTop.h, CONFIG_A.topAd.title);
         }
 
@@ -487,7 +487,7 @@
             ctx.arc(boxCircle.x + boxCircle.w / 2, boxCircle.y + boxCircle.h / 2, Math.min(boxCircle.w, boxCircle.h) / 2, 0, Math.PI * 2);
             ctx.clip();
           });
-        } else {
+        } else if (!isExporting) {
           drawPlaceholderGuide(boxCircle.x, boxCircle.y, boxCircle.w, boxCircle.h, CONFIG_A.circle.title);
         }
 
@@ -495,7 +495,7 @@
         const boxFooter = getFinalBox(CONFIG_A.footerAd, bw, bh);
         if (footerAdImage) {
           drawSmartImage(footerAdImage, boxFooter.x, boxFooter.y, boxFooter.w, boxFooter.h, fitMode);
-        } else {
+        } else if (!isExporting) {
           drawPlaceholderGuide(boxFooter.x, boxFooter.y, boxFooter.w, boxFooter.h, CONFIG_A.footerAd.title);
         }
 
@@ -506,7 +506,7 @@
             drawRoundRectPath(ctx, boxMain.x, boxMain.y, boxMain.w, boxMain.h, CONFIG_A.mainAd.borderRadius);
             ctx.clip();
           });
-        } else {
+        } else if (!isExporting) {
           drawPlaceholderGuide(boxMain.x, boxMain.y, boxMain.w, boxMain.h, CONFIG_A.mainAd.title);
         }
 
@@ -514,7 +514,7 @@
         const boxFull = getFinalBox(CONFIG_B.fullAd, bw, bh);
         if (fullAdImage) {
           drawSmartImage(fullAdImage, boxFull.x, boxFull.y, boxFull.w, boxFull.h, fitMode);
-        } else {
+        } else if (!isExporting) {
           drawPlaceholderGuide(boxFull.x, boxFull.y, boxFull.w, boxFull.h, CONFIG_B.fullAd.title);
         }
       }
@@ -522,7 +522,7 @@
 
     // 微調數值即時更新監聽
     document.querySelectorAll('.offset-controls input').forEach(input => {
-      input.addEventListener('input', renderCanvas);
+      input.addEventListener('input', () => renderCanvas(false));
     });
 
     document.getElementById('templateSelect').addEventListener('change', (e) => {
@@ -534,12 +534,12 @@
         document.getElementById('controlsModeA').style.display = 'none';
         document.getElementById('controlsModeB').style.display = 'block';
       }
-      renderCanvas();
+      renderCanvas(false);
     });
 
     document.getElementById('fitStrategy').addEventListener('change', (e) => {
       fitMode = e.target.value;
-      renderCanvas();
+      renderCanvas(false);
     });
 
     function setupImageUpload(inputId, callback) {
@@ -557,22 +557,30 @@
       });
     }
 
-    setupImageUpload('bgUpload', (img) => { bgImage = img; renderCanvas(); });
-    setupImageUpload('topAdUpload', (img) => { topAdImage = img; renderCanvas(); });
-    setupImageUpload('circleUpload', (img) => { circleImage = img; renderCanvas(); });
-    setupImageUpload('mainAdUpload', (img) => { mainAdImage = img; renderCanvas(); });
-    setupImageUpload('footerAdUpload', (img) => { footerAdImage = img; renderCanvas(); });
-    setupImageUpload('fullAdUpload', (img) => { fullAdImage = img; renderCanvas(); });
+    setupImageUpload('bgUpload', (img) => { bgImage = img; renderCanvas(false); });
+    setupImageUpload('topAdUpload', (img) => { topAdImage = img; renderCanvas(false); });
+    setupImageUpload('circleUpload', (img) => { circleImage = img; renderCanvas(false); });
+    setupImageUpload('mainAdUpload', (img) => { mainAdImage = img; renderCanvas(false); });
+    setupImageUpload('footerAdUpload', (img) => { footerAdImage = img; renderCanvas(false); });
+    setupImageUpload('fullAdUpload', (img) => { fullAdImage = img; renderCanvas(false); });
 
     document.getElementById('exportBtn').addEventListener('click', () => {
       if (!bgImage) {
         alert('請先上傳原始新聞截圖底圖！');
         return;
       }
+      
+      // 1. 隱藏導引框進行重新渲染
+      renderCanvas(true);
+
+      // 2. 下載圖片
       const link = document.createElement('a');
       link.download = 'modified_news_screenshot.png';
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
+
+      // 3. 恢復顯示畫面上導引框
+      renderCanvas(false);
     });
   </script>
 </body>
